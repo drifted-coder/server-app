@@ -9,7 +9,7 @@ const ctrl =
 
 router.use(auth);
 
-router.get("/agent",
+router.get("/",
   role("admin","agent"),
   ctrl.agentDashboard);
 

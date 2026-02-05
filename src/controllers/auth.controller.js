@@ -10,61 +10,67 @@ const authService = require("../services/auth.service");
 // User Registration
 exports.register = async (req, res) => {
   const exists = await User.findOne({ email: req.body?.email });
-  
+
+  // check whether the user exists in database or not
   if (exists) {
     return res.status(403).json({ message: "User already exists" });
   }
 
-  const user = await authService.register(req.body.email, req.body.password);
+  try {
+    var user = await authService.register(
+      req.body.email,
+      req.body.password,
+      req.body?.role,
+    );
+  } catch (error) {
+    res.status(500).json({ message: "something went wrong" });
+    return;
+  }
 
-  return res.status(201).json({ message: "User registered successfully", user: user });
+  // return user back to client
+  return res
+    .status(201)
+    .json({ message: "User registered successfully", user: user });
 };
 
 // User Login
 exports.login = async (req, res) => {
+  // Destructure the email and password
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select("+passwordHash");
-
-  if (!user) return res.status(401).json({ message: "Invalid credentials" });
-
-  const isMatch = await bcrypt.compare(password, user.passwordHash);
-
-  if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
-
-  const accessToken = generateAccessToken(user);
-  const refreshToken = generateRefreshToken(user);
-
-  user.refreshTokens.push({
-    token: refreshToken,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  });
-
-  await user.save();
-
-  res.json({
-    accessToken,
-    refreshToken,
-  });
+  // get the tokens
+  try{
+    const tokens = await authService.login(email, password);
+  
+    if (tokens) {
+      const {accessToken, refreshToken} = tokens;
+      res.status(200).json({
+        accessToken,
+        refreshToken,
+      });
+    } else {
+      res.status(400).json({
+        message: "Please provide valid credentials"
+      });
+    }
+  }
+  catch(error){
+    next(error)
+  }
 };
 
 // Token Refresh
 exports.refresh = async (req, res) => {
   const { refreshToken } = req.body;
 
-  const decoded = verifyRefreshToken(refreshToken);
+  try{
+    const newAccessToken = await authService.refresh(refreshToken)
+    res.json({ accessToken: newAccessToken });
+  }
+  catch(error){
+    next(error)
+  }
 
-  const user = await User.findById(decoded.id);
-
-  if (!user) return res.sendStatus(401);
-
-  const exists = user.refreshTokens.find((rt) => rt.token === refreshToken);
-
-  if (!exists) return res.sendStatus(401);
-
-  const newAccessToken = generateAccessToken(user);
-
-  res.json({ accessToken: newAccessToken });
 };
 
 // User Logout
@@ -74,16 +80,17 @@ exports.logout = async (req, res, next) => {
 
     // Validate inputs
     if (!userId || !refreshToken) {
-      return res.status(400).json({ message: "User ID and refresh token are required" });
+      return res
+        .status(400)
+        .json({ message: "User ID and refresh token are required" });
     }
+
     await authService.logout(userId, refreshToken);
 
     res.status(200).json({
-      message: "Logged out successfully"
+      message: "Logged out successfully",
     });
   } catch (err) {
     next(err);
   }
 };
-
-
