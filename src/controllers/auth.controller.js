@@ -10,18 +10,12 @@ const authService = require("../services/auth.service");
 // User Registration
 exports.register = async (req, res) => {
   const exists = await User.findOne({ email: req.body?.email });
-
+  
   if (exists) {
     return res.status(403).json({ message: "User already exists" });
   }
 
-  const hash = await bcrypt.hash(req.body?.password, 10);
-
-   const user = await User.create({
-    email: req.body?.email,
-    passwordHash: hash,
-    role: "user",
-  }); 
+  const user = await authService.register(req.body.email, req.body.password);
 
   return res.status(201).json({ message: "User registered successfully", user: user });
 };
@@ -74,11 +68,14 @@ exports.refresh = async (req, res) => {
 };
 
 // User Logout
-
 exports.logout = async (req, res, next) => {
   try {
     const { userId, refreshToken } = req.body;
 
+    // Validate inputs
+    if (!userId || !refreshToken) {
+      return res.status(400).json({ message: "User ID and refresh token are required" });
+    }
     await authService.logout(userId, refreshToken);
 
     res.status(200).json({
