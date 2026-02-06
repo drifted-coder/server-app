@@ -1,10 +1,4 @@
-const bcrypt = require("bcrypt");
 const { User } = require("../models");
-const {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-} = require("../utils/jwt");
 const authService = require("../services/auth.service");
 
 // User Registration

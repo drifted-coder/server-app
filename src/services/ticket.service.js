@@ -1,6 +1,7 @@
 const { Ticket } = require("../models");
 const { logActivity } = require("../services/activity.service");
 
+// create a ticket
 exports.createTicket = async (data, userId) => {
   const ticket = await Ticket.create({
     ...data,
@@ -17,6 +18,7 @@ exports.createTicket = async (data, userId) => {
   return ticket;
 };
 
+// update a ticket
 exports.updateTicket = async (ticket, updates, user) => {
   const oldStatus = ticket.status;
   const oldPriority = ticket.priority;
@@ -80,11 +82,13 @@ exports.updateTicket = async (ticket, updates, user) => {
   return ticket;
 };
 
+// soft delete a ticket
 exports.softDeleteTicket = async (ticket) => {
   ticket.deletedAt = new Date();
   await ticket.save();
 };
 
+// get all tickets
 exports.getTickets = async (query, user) => {
   const {
     search,
@@ -122,4 +126,10 @@ exports.getTickets = async (query, user) => {
     tickets,
     total,
   };
+};
+
+// get ticket details by id
+exports.getTicketDetailsById = async (query) => {
+  const movie = await movies.findById(query.id);
+  return movie;
 };
