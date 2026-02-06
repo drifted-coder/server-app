@@ -36,7 +36,8 @@ exports.getTickets = async (req, res, next) => {
 // get ticket by id
 exports.getTicketsById = async (req, res, next) => {
   try {
-    const movie = await service.getTicketDetailsById({id: req.params.id});
+    console.log(req)
+    const movie = await service.getTicketDetailsById(req);
     res.status(200).json(movie);
   } catch (error) {
     res

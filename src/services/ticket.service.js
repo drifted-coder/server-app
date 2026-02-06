@@ -130,6 +130,26 @@ exports.getTickets = async (query, user) => {
 
 // get ticket details by id
 exports.getTicketDetailsById = async (query) => {
-  const movie = await movies.findById(query.id);
-  return movie;
+  try {
+    const ticket = await Ticket.findById(query.params.id);
+
+    if (!ticket) {
+      return {
+        message: "Ticket not found",
+      };
+    }
+
+    //  If role is USER
+    if (
+      query.user.role === "user" &&
+      ticket.createdBy.toString() !== query.user.id
+    ) {
+      return {
+        message: "You can only access your own tickets",
+      };
+    }
+    return ticket;
+  } catch (err) {
+    next(err);
+  }
 };
