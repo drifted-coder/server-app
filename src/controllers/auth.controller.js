@@ -1,5 +1,10 @@
 const { User } = require("../models");
 const authService = require("../services/auth.service");
+const bcrypt = require("bcrypt");
+const {
+  verifyRefreshToken,
+  generateAccessToken,
+} = require("../utils/jwt");
 
 // User Registration
 exports.register = async (req, res) => {
@@ -33,38 +38,74 @@ exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   // get the tokens
-  try{
-    const tokens = await authService.login(email, password);
-  
+  try {
+    // check user exists or not
+    const user = await User.findOne({ email }).select("+passwordHash");
+    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+
+    // check credentials matches or not
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch)
+      return res.status(401).json({ message: "Invalid credentials" });
+
+    const tokens = await authService.login(user);
+
     if (tokens) {
-      const {accessToken, refreshToken} = tokens;
+      const { accessToken, refreshToken } = tokens;
       res.status(200).json({
         accessToken,
         refreshToken,
       });
     } else {
       res.status(400).json({
-        message: "Please provide valid credentials"
+        message: "Please provide valid credentials",
       });
     }
-  }
-  catch(error){
-    next(error)
+  } catch (error) {
+    next(error);
   }
 };
 
 // Token Refresh
-exports.refresh = async (req, res) => {
-  const { refreshToken } = req.body;
+exports.refresh = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
 
-  try{
-    const newAccessToken = await authService.refresh(refreshToken)
-    res.json({ accessToken: newAccessToken });
-  }
-  catch(error){
-    next(error)
-  }
+    if (!refreshToken) {
+      return res.status(400).json({
+        message: "Refresh token required",
+      });
+    }
 
+    // ✅ Verify Refresh Token
+    const decoded = verifyRefreshToken(refreshToken);
+
+    // ✅ Find User
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.sendStatus(401);
+    }
+
+    // ✅ Check Token Exists In DB
+    const exists = user.refreshTokens.find(
+      (rt) => rt.token === refreshToken
+    );
+
+    if (!exists) {
+      return res.sendStatus(401);
+    }
+
+    // ✅ Generate New Access Token
+    const newAccessToken = generateAccessToken(user);
+
+    return res.json({
+      accessToken: newAccessToken,
+    });
+
+  } catch (error) {
+    next(error);
+  }
 };
 
 // User Logout

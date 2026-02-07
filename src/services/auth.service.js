@@ -20,16 +20,7 @@ exports.register = async (email, password, role = "user") => {
 };
 
 // User Login
-exports.login = async (email, password) => {
-
-  // check user exists or not
-  const user = await User.findOne({ email }).select("+passwordHash");
-  if (!user) return res.status(401).json({ message: "Invalid credentials" });
-
-  // check credentials matches or not
-  const isMatch = await bcrypt.compare(password, user.passwordHash);
-  if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
-
+exports.login = async (user) => {
   // generate tokens and save
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
@@ -61,20 +52,3 @@ exports.logout = async (userId, refreshToken) => {
     },
   );
 };
-
-// Refresh Token
-exports.refresh = async(refreshToken) => {
-  const decoded = verifyRefreshToken(refreshToken);
-
-  const user = await User.findById(decoded.id);
-
-  if (!user) return res.sendStatus(401);
-
-  const exists = user.refreshTokens.find((rt) => rt.token === refreshToken);
-
-  if (!exists) return res.sendStatus(401);
-
-  const newAccessToken = generateAccessToken(user);
-
-  return newAccessToken;
-}
