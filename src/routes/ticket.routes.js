@@ -9,7 +9,7 @@ router.use(auth);
 
 router.post("/", ctrl.createTicket);
 
-router.get("/", role("admin", "agent"), ctrl.getTickets).get("/:id", ctrl.getTicketsById);
+router.get("/", ctrl.getTickets).get("/:id", ctrl.getTicketsById);
 
 router.patch("/:id", ownership, ctrl.updateTicket);
 
