@@ -10,7 +10,7 @@ const ctrl =
 router.use(auth);
 
 router.get("/",
-  role("admin"),
+  role("admin", "agent"),
   ctrl.getUsers);
 
 router.patch("/:id",
