@@ -24,11 +24,11 @@ const LOGIN_RATE_LIMIT_MAX =
 // =======================
 // RATE LIMITER
 // =======================
-// const loginLimiter = rateLimit({
-//   windowMs: LOGIN_RATE_LIMIT_WINDOW * 60 * 1000,
-//   max: LOGIN_RATE_LIMIT_MAX,
-//   message: "Too many login attempts. Try again later.",
-// });
+const loginLimiter = rateLimit({
+  windowMs: LOGIN_RATE_LIMIT_WINDOW * 60 * 1000,
+  max: LOGIN_RATE_LIMIT_MAX,
+  message: "Too many login attempts. Try again later.",
+});
 
 
 // =======================
@@ -53,7 +53,7 @@ app.use(xssClean());
 // =======================
 
 // Apply limiter ONLY to login
-// app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/login", loginLimiter);
 
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/users", require("./routes/user.routes"));
