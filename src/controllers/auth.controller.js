@@ -77,17 +77,17 @@ exports.refresh = async (req, res, next) => {
       });
     }
 
-    // ✅ Verify Refresh Token
+    // Verify Refresh Token
     const decoded = verifyRefreshToken(refreshToken);
 
-    // ✅ Find User
+    // Find User
     const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.sendStatus(401);
     }
 
-    // ✅ Check Token Exists In DB
+    // Check Token Exists In DB
     const exists = user.refreshTokens.find(
       (rt) => rt.token === refreshToken
     );
@@ -96,7 +96,7 @@ exports.refresh = async (req, res, next) => {
       return res.sendStatus(401);
     }
 
-    // ✅ Generate New Access Token
+    // Generate New Access Token
     const newAccessToken = generateAccessToken(user);
 
     return res.json({
